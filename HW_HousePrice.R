@@ -1,15 +1,15 @@
 library(readr)
 library(dplyr)
 library(tidyverse)
+library(FNN)
 
-
+options("max.print" = 10000000)
 # Load Data ---------------------------------------------------------------
 train <- read.csv("train.csv")
 test <- read.csv("test.csv")
 
 missing_value = data.frame(matrix(ncol = 2, nrow = 81))
 names(missing_value) = c("colName","MissingValue")
-
 
 #cleaning data - find columns with missing value
 #conbine train and test data once and do the cleaning at once.
@@ -75,14 +75,78 @@ missing_value$colName
 train <- filter(train_test, train_test$SalePrice != 0)
 test <- filter(train_test, train_test$SalePrice == 0)
 
+# #Parametric 
+# train.lm <- lm(SalePrice ~ ., data =train)
+# summary(train.lm)
+# mse1 <- mean(train.lm$residuals^2)
+# mse1
+# #predict
+# test.lm <- predict(train.lm, newdata=test)
+
+##########################################
+##########################################KNN
+##########################################
+
+#use only numeric cols
+train_numeric <- select_if(train,is.numeric)
+test_numeric <- select_if(test,is.numeric)
+
+#By using cor(), here we decide what X variables will be added to KNN model.
+cor(train_numeric)
+#The following has the higest correlation between salePrice and it.
+# c(5,17,24,13,14,18,22,7,8)
+# OverallQual
+# GrLivArea
+# GarageArea
+# TotalBsmtSF
+# X1stFlrSF
+# FullBath
+# TotRmsAbvGrd
+# YearBuilt
+# YearRemodAdd
+
+test_numeric['SalePrice'] <- NULL
+train_numeric['SalePrice'] <- NULL
+
+# calculate the number of K
+k <- floor(sqrt(nrow(train_numeric)))
+
+#nomalize
+normalize <- function(x) {
+  norm <- ((x - min(x))/(max(x) - min(x)))
+  return (norm)
+}
+
+train_numeric[,2:33] <- apply(train_numeric[,2:33],2,normalize) 
+test_numeric[,2:33] <- apply(test_numeric[,2:33],2,normalize) 
+
+#Final selection
+train_numeric <- train_numeric[, c(5,17,24,13,14,18,22,7,8)]
+test_numeric <- test_numeric[, c(5,17,24,13,14,18,22,7,8)]
+
+#
+# function to calculate euclidean distance(reference: https://rpubs.com/bskc/300711)
+euc.dist <- function(x1, x2) sqrt(sum((x1 - x2) ^ 2))
+#
+eist <- c()
+distance <- c()
+
+for (j in 1:1459) {
+  for (i in 1:1460) {
+    distance[i] <- euc.dist(train_numeric[i,],test_numeric[j,])
+
+  }
+  edist_temp <- data.frame(dist=distance, salePrice = train[,81])
+  edist_temp <- edist_temp[order(edist_temp$dist),]
+  edist_temp <- edist_temp[1:20,]
+  distance_mean <- mean(edist_temp$salePrice)
+  eist[j] <- distance_mean
+}
+
+#submission - export predictions 
+final_result <- data_frame(test$Id)
+final_result["salePrice"] <- eist
+write.table(final_result, file = "submission.csv", row.names=F, col.names=c("Id","salePrice"), sep=",")
 
 
 
-
-train.lm <- lm(SalePrice ~ ., data =train)
-summary(train.lm)
-mse1 <- mean(train.lm$residuals^2)
-mse1
-
-#predict
-test.lm <- predict(train.lm, newdata=test)
