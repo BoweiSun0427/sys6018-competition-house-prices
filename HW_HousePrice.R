@@ -62,7 +62,7 @@ train_test[, c(7,31,32,33,34,36,61,64,65,73,74,75)] <-  lapply(train_test[, c(7,
 train_test[, c(7,31,32,33,34,36,61,64,65,73,74,75)][is.na(train_test[, c(7,31,32,33,34,36,61,64,65,73,74,75)])] <- "None"
 train_test[, c(7,31,32,33,34,36,61,64,65,73,74,75)] <-  lapply(train_test[, c(7,31,32,33,34,36,61,64,65,73,74,75)], as.factor)
 
-#run the for loop again to check whether clearning is done
+#run the for loop again to check whether cleaning is done
 for (i in 1:81){
   temp = as.data.frame(table(is.na(train_test[,i])))
   missing_value[i,] <- temp[2,2]
@@ -94,7 +94,7 @@ test_numeric <- select_if(test,is.numeric)
 #By using cor(), here we decide what X variables will be added to KNN model.
 cor(train_numeric)
 #The following has the higest correlation between salePrice and it.
-# c(5,17,24,13,14,18,22,7,8)
+# c(5,17,24,13)
 # OverallQual
 # GrLivArea
 # GarageArea
@@ -111,7 +111,7 @@ train_numeric['SalePrice'] <- NULL
 # calculate the number of K
 k <- floor(sqrt(nrow(train_numeric)))
 
-#nomalize
+#nomalize(reference: https://rpubs.com/bskc/300711)
 normalize <- function(x) {
   norm <- ((x - min(x))/(max(x) - min(x)))
   return (norm)
@@ -121,8 +121,8 @@ train_numeric[,2:33] <- apply(train_numeric[,2:33],2,normalize)
 test_numeric[,2:33] <- apply(test_numeric[,2:33],2,normalize) 
 
 #Final selection
-train_numeric <- train_numeric[, c(5,17,24,13,14,18,22,7,8)]
-test_numeric <- test_numeric[, c(5,17,24,13,14,18,22,7,8)]
+train_numeric <- train_numeric[, c(5,17,24,13)]
+test_numeric <- test_numeric[, c(5,17,24,13)]
 
 #
 # function to calculate euclidean distance(reference: https://rpubs.com/bskc/300711)
